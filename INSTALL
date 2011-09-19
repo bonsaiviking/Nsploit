@@ -1,0 +1,6 @@
+1) Edit and copy the sample config file to ~/.Nsploit
+2) copy the nselib files into your Nmap nselib which is normally under /usr/share/nmap or /usr/local/share/nmap
+3) copy the scripts files into your Nmap scripts dir which is normally under /usr/share/nmap or /usr/local/share/nmap
+4) run nmap --script-updatedb to add your scripts to the Nmap database
+5) make sure that the lua expat package is installed for your OS
+6) in some cases, Nmap is not aware of the correct install location of the lua expat shared objects, you may need to add additional symlinks in /usr/local/share/lua and /usr/local/lib/lua
