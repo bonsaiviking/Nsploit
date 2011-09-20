@@ -85,7 +85,7 @@ function msfConnect(errcnt)
    end
    		stdnse.print_debug(1,"Connect Success") 
    stdnse.print_debug(1, "Sending: " .. loginStr )
-   status, err =  socket:send(loginStr)
+   local status, err =  socket:send(loginStr)
    if err ~= nil then
         if status == nil then
    		releaseMutex()
@@ -101,13 +101,14 @@ function msfConnect(errcnt)
 		return socket
 	end
    end
+   local line
    status, line = socket:receive_buf("\n", false)
    if not status then
    	releaseMutex()
 	return nil
    end
    stdnse.print_debug(1,"Login Line: " .. line )
-   responseXML  = lxp.lom.parse(line)
+   local responseXML  = lxp.lom.parse(line)
 
    if isFault(responseXML) then 
    	releaseMutex()
@@ -164,7 +165,7 @@ function exploit(socket,exploit,os,ip,opt )
 	stdnse.print_debug(1,"socket is of type " .. type(socket) .. " in " .. exploit)
 	acquireMutex()
 	socket:send(buildExploitXML(exploit,options))
-   	status, line = socket:receive_buf("\n", false)
+  local status, line = socket:receive_buf("\n", false)
 	releaseMutex()
 	if status then
    		local responseXML  = lxp.lom.parse(line)
@@ -196,7 +197,7 @@ function parseValue(t)
 		return {}
 	end
 	local value = t[1]
-	ret = {}
+	local ret = {}
 	if(value["tag"] == "struct") then
 		for i,v in ipairs(value) do
 			if(v[2][1]["tag"] == "array") then
@@ -301,7 +302,7 @@ function buildExploitXML(exploit,options)
 end
 
 function makeTag(header,myvalue)
-	retstring = "<" .. header .. ">" .. myvalue .. "</" .. header .. ">"
+	local retstring = "<" .. header .. ">" .. myvalue .. "</" .. header .. ">"
 	return retstring
 end
 

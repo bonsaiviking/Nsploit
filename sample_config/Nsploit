@@ -11,6 +11,11 @@
 <LHOST>192.168.1.235</LHOST>
 </options>
 </windows>
+<generic>
+<options>
+<payload>cmd/unix/interact</payload>
+</options>
+</generic>
 </os>
 </Nsploit>
 
