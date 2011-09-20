@@ -13,7 +13,8 @@ Dependencies
 
 Authors
 -------
-The original author of Nsploit is Ryan Linn (@sussurro).
+The original author of Nsploit is Ryan Linn (@sussurro). Updated by Daniel
+miller (@bonsaiviking)
 
 Known Bugs
 ----------
