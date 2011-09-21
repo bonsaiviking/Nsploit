@@ -5,7 +5,9 @@
 module(... or "Nsploit",package.seeall)
 
 require "lxp/lom"
+local lomParse = lxp.lom.parse
 require "stdnse"
+local print_debug = stdnse.print_debug
 require "nmap"
 
 local xmlHeader = "<?xml version=\"1.0\" ?>"
@@ -34,7 +36,7 @@ function msfInit()
     local config  = file:read("*all")
     config = string.gsub(config,"\n","")
 
-    local parsed = lxp.lom.parse(config)
+    local parsed = lomParse(config)
     config = parseConfig(parsed)
     nmap.registry.Nsploit["config"] = config
 
@@ -45,7 +47,7 @@ function msfInit()
     socket = nmap.registry.Nsploit["socket"]
     local try = nmap.new_try(function() 
       socket = msfConnect()
-      stdnse.print_debug(1,"Saved socket busted")
+      print_debug(1,"Saved socket busted")
       return socket
     end)
     try(socket:send("\n"))
@@ -78,15 +80,15 @@ function msfConnect(errcnt)
 
   msfMutex("lock")
   socket = nmap.new_socket()
-  stdnse.print_debug(1,"New Socket Created") 
+  print_debug(1,"New Socket Created") 
 
   if not socket:connect(host,port) then 
-    stdnse.print_debug(1,"Connect Failed") 
+    print_debug(1,"Connect Failed") 
     msfMutex("done")
     return nil
   end
-  stdnse.print_debug(1,"Connect Success") 
-  stdnse.print_debug(1, "Sending: " .. loginStr )
+  print_debug(1,"Connect Success") 
+  print_debug(1, "Sending: " .. loginStr )
   local status, err =  socket:send(loginStr)
   if err ~= nil then
     if status == nil then
@@ -109,8 +111,8 @@ function msfConnect(errcnt)
     msfMutex("done")
     return nil
   end
-  stdnse.print_debug(1,"Login Line: " .. line )
-  local responseXML  = lxp.lom.parse(line)
+  print_debug(1,"Login Line: " .. line )
+  local responseXML  = lomParse(line)
 
   if isFault(responseXML) then 
     msfMutex("done")
@@ -141,7 +143,7 @@ function exploit(socket,exploit,os,ip,opt )
   if not nmap.registry.Nsploit["config"]["os"][os] then return "Bad Operating System" end
   if not nmap.registry.Nsploit["config"]["os"][os]["options"] then return "No Options Found" end
 
-  stdnse.print_debug(1,"Exploit function for " .. exploit .. " got a socket of type  " .. type(socket))
+  print_debug(1,"Exploit function for " .. exploit .. " got a socket of type  " .. type(socket))
   options = nmap.registry.Nsploit["config"]["os"][os]["options"]
   options["RHOST"] = ip
   if type(opt) == "table" then
@@ -164,13 +166,13 @@ function exploit(socket,exploit,os,ip,opt )
   if socket == nil then
     socket = msfConnect()
   end
-  stdnse.print_debug(1,"socket is of type " .. type(socket) .. " in " .. exploit)
+  print_debug(1,"socket is of type " .. type(socket) .. " in " .. exploit)
   msfMutex("lock")
   socket:send(buildExploitXML(exploit,options))
   local status, line = socket:receive_buf("\n", false)
   msfMutex("done")
   if status then
-    local responseXML  = lxp.lom.parse(line)
+    local responseXML  = lomParse(line)
     if isFault(responseXML) then
       return "Exploit Failed"
     else
@@ -222,7 +224,7 @@ function parseResponse(t)
       if(t[1]["tag"] == "params") then
         if(table.getn(t[1][1]) > 1) then 
           for i,v in ipairs(t[1][1]) do
-            stdnse.print_debug(1,i .. ":")
+            print_debug(1,i .. ":")
             parseValue(v)
           end
         else
@@ -230,11 +232,11 @@ function parseResponse(t)
         end
       end
     else
-      stdnse.print_debug(1,"parseResponse: No methodResponse tag")
+      print_debug(1,"parseResponse: No methodResponse tag")
       return false
     end
   else
-    stdnse.print_debug(1,"parseResponse: object is not a table")
+    print_debug(1,"parseResponse: object is not a table")
     return false
   end
 end
