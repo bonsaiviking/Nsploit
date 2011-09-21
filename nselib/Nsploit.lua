@@ -268,16 +268,22 @@ end
 function parseConfig(config)
 
   local retVal = {}
-  local i,v
+  local str = ""
 
   for i,v in ipairs(config)  do
-    if type(v[1]) == "table" then
-      retVal[config[i]["tag"]] = parseConfig(v)
+    if type(v) == "table" then
+      retVal[v["tag"]]= parseConfig(v)
     else
-      if v[1] then
-        retVal[string.lower(config[i]["tag"])] = v[1]
+      if v then
+        str = str .. v
       end
     end
+  end
+
+  if #str > 0 and next(retVal) == nil then
+    retVal = str
+  elseif #str > 0 then
+    retVal[1] = str
   end
 
   return retVal
