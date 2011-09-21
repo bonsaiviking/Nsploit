@@ -6,8 +6,10 @@ module(... or "Nsploit",package.seeall)
 
 require "lxp/lom"
 require "stdnse"
+require "nmap"
 
 local xmlHeader = "<?xml version=\"1.0\" ?>"
+local msfMutex = nmap.mutex("Nsploit")
 
 function msfInit()
   local filepath = nil
@@ -74,13 +76,13 @@ function msfConnect(errcnt)
     return socket
   end
 
-  acquireMutex()
+  msfMutex("lock")
   socket = nmap.new_socket()
   stdnse.print_debug(1,"New Socket Created") 
 
   if not socket:connect(host,port) then 
     stdnse.print_debug(1,"Connect Failed") 
-    nmap.registry.Nsploit["mutex"] = 0
+    msfMutex("done")
     return nil
   end
   stdnse.print_debug(1,"Connect Success") 
@@ -88,15 +90,15 @@ function msfConnect(errcnt)
   local status, err =  socket:send(loginStr)
   if err ~= nil then
     if status == nil then
-      releaseMutex()
+      msfMutex("done")
       socket = msfConnect(1)
       return socket
     else
       if errcnt > 3 then
-        releaseMutex()
+        msfMutex("done")
         return nil
       end
-      releaseMutex()
+      msfMutex("done")
       socket = msfConnect(errcnt + 1)
       return socket
     end
@@ -104,14 +106,14 @@ function msfConnect(errcnt)
   local line
   status, line = socket:receive_buf("\n", false)
   if not status then
-    releaseMutex()
+    msfMutex("done")
     return nil
   end
   stdnse.print_debug(1,"Login Line: " .. line )
   local responseXML  = lxp.lom.parse(line)
 
   if isFault(responseXML) then 
-    releaseMutex()
+    msfMutex("done")
     return nil
   end
 
@@ -122,11 +124,11 @@ function msfConnect(errcnt)
       nmap.registry.Nsploit = {}
     end	
     nmap.registry.Nsploit["token"] = loginResult["token"]
-    nmap.registry.Nsploit["mutex"] = 0
+    msfMutex("done")
     return socket
   end
 
-  releaseMutex()
+  msfMutex("done")
   return nil
 
 end
@@ -163,10 +165,10 @@ function exploit(socket,exploit,os,ip,opt )
     socket = msfConnect()
   end
   stdnse.print_debug(1,"socket is of type " .. type(socket) .. " in " .. exploit)
-  acquireMutex()
+  msfMutex("lock")
   socket:send(buildExploitXML(exploit,options))
   local status, line = socket:receive_buf("\n", false)
-  releaseMutex()
+  msfMutex("done")
   if status then
     local responseXML  = lxp.lom.parse(line)
     if isFault(responseXML) then
@@ -350,23 +352,4 @@ function hostMatch(os,check)
   end
 
   return false
-end
-function acquireMutex()
-  if nmap.registry.Nsploit["mutex"] then
-    while nmap.registry.Nsploit["mutex"] == 1  do
-      mysocket = nmap.new_socket()
-      mysocket:set_timeout(1000)
-      mysocket:connect("localhost",0)
-      stdnse.print_debug(1,"Waiting on Mutex") 
-    end
-  end
-  stdnse.print_debug(1,"Got Mutex")
-  nmap.registry.Nsploit["mutex"] = 1
-end
-
-function releaseMutex()
-  stdnse.print_debug(1,"Giving Up Mutex")
-  if nmap.registry.Nsploit["mutex"] then
-    nmap.registry.Nsploit["mutex"] = 0
-  end
 end
