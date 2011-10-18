@@ -135,6 +135,27 @@ function msfConnect(errcnt)
 
 end
 
+function new_console(socket)
+  if socket == nil then
+    socket = msfConnect()
+  end
+  msfMutex("lock")
+  socket:send(buildXML("console.create"))
+  local status, line = socket:receive_buf("\n", false)
+  msfMutex("done")
+  if status then
+    local responseXML = lomParse(line)
+    if isFault(responseXML) then
+      return nil, "console.create Failed"
+    else
+      local result = parseResponse(responseXML)
+      return result["id"]
+    end
+  else
+    return nil, "Failed"
+  end
+end
+
 function exploit(socket,exploit,os,ip,opt )
 
   local options
@@ -293,22 +314,27 @@ function parseConfig(config)
   return retVal
 end
 
-function buildExploitXML(exploit,options)
-
+function buildXML(method, params)
   local xmlString = xmlHeader
-
   xmlString = xmlString .. "<methodCall>"
-  xmlString = xmlString .. makeTag("methodName","module.execute")
+  xmlString = xmlString .. makeTag("methodName", method)
   xmlString = xmlString .. "<params>"
   xmlString = xmlString .. makeParam(nmap.registry.Nsploit["token"])
-  xmlString = xmlString .. makeParam("exploit")
-  xmlString = xmlString .. makeParam(exploit)
-  xmlString = xmlString .. makeParam(options)
+  if type(params) == "table" then
+    for i,v in ipairs(params) do
+      xmlString = xmlString .. makeParam(v)
+    end
+  elseif params != nil then
+    xmlString = xmlString .. makeParam(params)
+  end
   xmlString = xmlString .. "</params>"
   xmlString = xmlString .. "</methodCall>\0"
 
   return xmlString
+end
 
+function buildExploitXML(exploit,options)
+  return buildXML("module.execute", {"exploit", exploit, options})
 end
 
 function makeTag(header,myvalue)
