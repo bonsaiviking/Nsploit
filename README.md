@@ -19,4 +19,6 @@ miller (@bonsaiviking)
 Known Bugs
 ----------
 * The config file, ~/.Nsploit, cannot contain extraneous whitespace, such as
-  indentation. Not sure if this is a problem with the 
+  indentation. Not sure if this is a problem.
+* Metasploit has switched from XmlRPC to MessagePack for transport, which
+  means this project no longer works.
